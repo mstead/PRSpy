@@ -38,3 +38,9 @@ Alternatively, you can manually configure PRSpy by creating a configuration file
 in ~/.prspy/prspy.conf (see the sample config file in the checkout dir). This is
 useful if you already have an Oauth token created.
 
+
++++ Dependancies +++
+Listing required dependencies here for now until I get around to packaging.
+
+1. PyGithub (https://github.com/jacquev6/PyGithub)
+
