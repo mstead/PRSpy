@@ -1,0 +1,70 @@
+#!/usr/bin/python
+
+import sys
+
+import logging
+import time
+
+import gtk
+import glib
+
+from prspy.utils import get_yes_no
+from prspy import config
+from prspy.gui.component import StatusIcon
+from prspy.github_util import GithubConnect
+from prspy.gui.controllers import MainViewController
+from prspy.config import NotConfiguredError, PRSpyConfig, ConfigBuilder
+
+
+class PRSpyError(Exception):
+    pass
+
+class PRSpy():
+
+    def __init__(self):
+        try:
+            config = PRSpyConfig()
+        except NotConfiguredError, e:
+            print "An error occurred reading the PRSpy config file:"
+            print "    %s" % e.message
+            print ""
+            if get_yes_no("Would you like to (re)configure PRSpy?"):
+                config = ConfigBuilder().build()
+            else:
+                sys.exit(0)
+
+
+        self.status_icon = StatusIcon()
+        self.status_icon.connect('activate', self._on_activate)
+        self.status_icon.connect('force_clicked', self._update)
+        self.status_icon.connect('quit_clicked', self._exit_app)
+
+
+        self.main_view_controller = MainViewController(config)
+
+    def _on_activate(self, icon):
+        self.main_view_controller.show_main_view()
+        self.status_icon.reset_icon_state()
+
+    def _update(self, icon):
+        self.main_view_controller.refresh_model()
+
+    def _exit_app(self, icon):
+        gtk.main_quit()
+
+
+if __name__ == "__main__":
+    logger = logging.getLogger("PRSpy")
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    handler = logging.FileHandler(config.APP_LOG_FILE)
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+    try:
+        PRSpy()
+        gtk.main()
+    except PRSpyError, e:
+        print e.message
+        sys.exit(1)
+
