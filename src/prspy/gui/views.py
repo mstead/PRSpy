@@ -33,6 +33,9 @@ class MainView(GladeComponent, gobject.GObject):
         'selection-changed': (gobject.SIGNAL_RUN_LAST,
                               gobject.TYPE_NONE,
                              (gobject.TYPE_INT,)),
+        'on-double-click': (gobject.SIGNAL_RUN_LAST,
+                              gobject.TYPE_NONE,
+                             (gobject.TYPE_INT,)),
     }
 
     def __init__(self, main_view_model):
@@ -51,6 +54,7 @@ class MainView(GladeComponent, gobject.GObject):
         self.event_tree_view.set_model(self.tree_view_model)
         self.event_tree_view.get_selection().connect("changed",
                                                      self._on_selection_change)
+        self.event_tree_view.connect("row-activated", self._on_row_double_click)
 
         self._add_column("No.", 0, visible=False)
         self._add_column("Title", 1)
@@ -125,3 +129,8 @@ class MainView(GladeComponent, gobject.GObject):
 
         selection = model.get(tree_iter, 0)
         self.emit("selection-changed", int(selection[0]))
+
+    def _on_row_double_click(self, treeview, path, column):
+        tree_iter = treeview.get_model().get_iter(path)
+        selection = treeview.get_model().get(tree_iter, 0)
+        self.emit("on-double-click", int(selection[0]))

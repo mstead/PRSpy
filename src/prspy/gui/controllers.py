@@ -20,6 +20,8 @@
 '''
 Contains the controllers for the various parts of the application.
 '''
+import webbrowser
+
 from prspy.gui.models import MainViewModel
 from prspy.gui.views import MainView
 from prspy.github_util import GithubConnect
@@ -37,6 +39,10 @@ class MainViewController(object):
         # When the selection changes in the view, update
         # the view's detail pain with the correct model data.
         self.view.connect("selection-changed", self._on_selection_change)
+
+        # When a row is double clicked, open the pull request in the
+        # default browser.
+        self.view.connect("on-double-click", self._open_pull_request_in_browser)
 
     def show_main_view(self):
         # If it is the first time that the main view
@@ -59,5 +65,10 @@ class MainViewController(object):
             pull = self.model.pull_requests[pull_request_num]
         self.view.update_details(pull)
 
+    def _open_pull_request_in_browser(self, view, pull_request_num):
+        if not pull_request_num in self.model.pull_requests:
+            return
 
+        pull_request = self.model.pull_requests[pull_request_num]
+        webbrowser.open(pull_request.html_url, 0, True)
 
