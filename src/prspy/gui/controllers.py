@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with PRSpy.  If not, see <http://www.gnu.org/licenses/>.
 #
+import sys
 
 '''
 Contains the controllers for the various parts of the application.
@@ -43,6 +44,12 @@ class MainViewController(object):
         # When a row is double clicked, open the pull request in the
         # default browser.
         self.view.connect("on-double-click", self._open_pull_request_in_browser)
+
+        # listen for the quit button press
+        self.view.connect("on-quit-clicked", self._on_quit_clicked)
+
+        # refresh button was clicked in the view
+        self.view.connect("on-refresh-clicked", self._on_refresh_clicked)
 
     def show_main_view(self):
         # If it is the first time that the main view
@@ -72,3 +79,8 @@ class MainViewController(object):
         pull_request = self.model.pull_requests[pull_request_num]
         webbrowser.open(pull_request.html_url, 0, True)
 
+    def _on_quit_clicked(self, button):
+        sys.exit(0)
+
+    def _on_refresh_clicked(self, button):
+        self.refresh_model()

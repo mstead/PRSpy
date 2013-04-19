@@ -36,10 +36,15 @@ class MainView(GladeComponent, gobject.GObject):
         'on-double-click': (gobject.SIGNAL_RUN_LAST,
                               gobject.TYPE_NONE,
                              (gobject.TYPE_INT,)),
+        'on-quit-clicked': (gobject.SIGNAL_RUN_LAST,
+                              gobject.TYPE_NONE, ()),
+        'on-refresh-clicked': (gobject.SIGNAL_RUN_LAST,
+                              gobject.TYPE_NONE, ()),
     }
 
     def __init__(self, main_view_model):
-        widgets = ["window", "event_tree_view", "comments_container", "body"]
+        widgets = ["window", "event_tree_view", "comments_container", "body",
+                   "quit_button", "refresh_button"]
         GladeComponent.__init__(self, "ghui_main.glade", initial_widget_names=widgets)
         gobject.GObject.__init__(self)
 
@@ -50,6 +55,11 @@ class MainView(GladeComponent, gobject.GObject):
         # that the view gets updated.
         self.model.connect("changed", self._on_model_change)
 
+        # Configure toolbar button events.
+        self.quit_button.connect("clicked", self._on_button_press)
+        self.refresh_button.connect("clicked", self._on_button_press)
+
+        # Configure treeview events.
         self.tree_view_model = gtk.ListStore(str, str, str, str, str, str)
         self.event_tree_view.set_model(self.tree_view_model)
         self.event_tree_view.get_selection().connect("changed",
@@ -134,3 +144,9 @@ class MainView(GladeComponent, gobject.GObject):
         tree_iter = treeview.get_model().get_iter(path)
         selection = treeview.get_model().get(tree_iter, 0)
         self.emit("on-double-click", int(selection[0]))
+
+    def _on_button_press(self, button):
+        if button == self.quit_button:
+            self.emit("on-quit-clicked")
+        elif button == self.refresh_button:
+            self.emit("on-refresh-clicked")
