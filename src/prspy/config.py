@@ -57,9 +57,18 @@ class PRSpyConfig(object):
 
         self._validate_all()
 
+    def set_property(self, section, option, value):
+        self.parser.set(section, option, value)
+        setattr(self, "%s_%s" % (section, option), value)
+
+    def save(self):
+        self.parser.write(file(CONFIG_FILE, "w"))
+
     def _validate_all(self):
         self._validate("github", "auth_token")
         self._validate("github", "org_id")
+        self._validate("github", "orgs")
+        self._validate("github", "repos")
 
     def _validate(self, section, option):
         attr_name = "%s_%s" % (section, option)

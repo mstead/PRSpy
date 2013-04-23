@@ -19,21 +19,40 @@
 
 from github import Github
 from prspy.model import PullRequest
+from github.GithubException import GithubException
 
 class GithubConnect(object):
     def __init__(self, gh_auth_token):
         self._connection = Github(gh_auth_token)
 
-    def get_repos_for_org(self, org):
-        org = self._connection.get_organization(org)
-        return list(org.get_repos())
-
-    def get_pulls_from_repos(self, org_name):
+    def get_pull_requests(self, orgs, repos):
         pulls = []
-        repos = self.get_repos_for_org(org_name)
+        for org in orgs:
+            pulls.extend(self._get_pull_requests_for_org(org))
+
         for repo in repos:
-            pulls.extend(list(repo.get_pulls()))
+            pulls.extend(self._get_pull_requests_for_repo(repo))
+
         return pulls
+
+    def _get_pull_requests_for_org(self, org):
+        print "Checking for %s" % org
+        pulls = []
+        try:
+            org = self._connection.get_organization(org)
+        except GithubException, e:
+            print e
+            return []
+
+        for repo in list(org.get_repos()):
+            pulls.extend(list(repo.get_pulls()))
+
+        return pulls
+
+    def _get_pull_requests_for_repo(self, repo_name):
+        repo = self._connection.get_repo(repo_name)
+        return list(repo.get_pulls())
+
 
     def get_pull_request(self, repo_name, pull_number, org=None):
         if org:

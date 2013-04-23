@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with PRSpy.  If not, see <http://www.gnu.org/licenses/>.
 #
+import pygtk
 
 '''
 Contains the views that are presented in this application.
@@ -40,11 +41,13 @@ class MainView(GladeComponent, gobject.GObject):
                               gobject.TYPE_NONE, ()),
         'on-refresh-clicked': (gobject.SIGNAL_RUN_LAST,
                               gobject.TYPE_NONE, ()),
+        'on-options-clicked': (gobject.SIGNAL_RUN_LAST,
+                              gobject.TYPE_NONE, ()),
     }
 
     def __init__(self, main_view_model):
         widgets = ["window", "event_tree_view", "comments_container", "body",
-                   "quit_button", "refresh_button"]
+                   "quit_button", "refresh_button", "preferences_button"]
         GladeComponent.__init__(self, "ghui_main.glade", initial_widget_names=widgets)
         gobject.GObject.__init__(self)
 
@@ -58,6 +61,7 @@ class MainView(GladeComponent, gobject.GObject):
         # Configure toolbar button events.
         self.quit_button.connect("clicked", self._on_button_press)
         self.refresh_button.connect("clicked", self._on_button_press)
+        self.preferences_button.connect("clicked", self._on_button_press)
 
         # Configure treeview events.
         self.tree_view_model = gtk.ListStore(str, str, str, str, str, str)
@@ -150,3 +154,80 @@ class MainView(GladeComponent, gobject.GObject):
             self.emit("on-quit-clicked")
         elif button == self.refresh_button:
             self.emit("on-refresh-clicked")
+        elif button == self.preferences_button:
+            self.emit("on-options-clicked")
+
+
+class OptionsDialog(GladeComponent):
+    def __init__(self, config):
+        widgets = ["window", "configNotebook", "saveButton", "cancelButton"]
+        GladeComponent.__init__(self, "options.glade", initial_widget_names=widgets)
+
+        self.config = config
+
+        self.orgs = CollectPropertyTab('Org');
+        self.orgs.set_values(self.config.github_orgs.split(","))
+        self.configNotebook.append_page(self.orgs.get_top_level(), gtk.Label("Organizations"))
+
+        self.saveButton.connect("clicked", self.on_save)
+        self.cancelButton.connect("clicked", self.on_cancel)
+
+    def on_save(self, button):
+        self.config.set_property("github", "orgs", ",".join(self.orgs.get_values()))
+        self.config.save()
+        self.window.destroy()
+
+    def on_cancel(self, button):
+        self.window.destroy()
+
+
+class CollectPropertyTab(GladeComponent):
+    def __init__(self, property_label):
+        widgets = ["main_content", "propertyLabel", "propertyField", "actionButton",
+                   "propertyList", "removeButton"]
+        GladeComponent.__init__(self, "add_property.glade", initial_widget_names = widgets)
+        self.propertyLabel.set_text(property_label + ":")
+
+        self.model = gtk.ListStore(str)
+        self.propertyList.set_model(self.model)
+
+        column = gtk.TreeViewColumn(property_label)
+        self.propertyList.append_column(column)
+        cell = gtk.CellRendererText()
+        column.pack_start(cell, False)
+        column.add_attribute(cell, "text", 0)
+
+        self.actionButton.connect("clicked", self._add)
+        self.removeButton.connect("clicked", self._remove)
+
+    def _add(self, button):
+        propertyValue = self.propertyField.get_text()
+        if not propertyValue:
+            return
+
+        self.model.append([propertyValue])
+        self.propertyField.set_text("")
+
+    def _remove(self, button):
+        selection = self.propertyList.get_selection()
+        if not selection:
+            return
+        model, iter_to_remove = selection.get_selected()
+        self.model.remove(iter_to_remove)
+
+    def set_values(self, values):
+        for value in values:
+            if value:
+                self.model.append([value])
+
+    def get_values(self):
+        items = []
+        list_iter = self.model.get_iter_first()
+        while list_iter != None:
+            items.append(self.model.get_value(list_iter, 0))
+            list_iter = self.model.iter_next(list_iter)
+        return items
+
+    def get_top_level(self):
+        return self.main_content
+

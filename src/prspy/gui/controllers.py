@@ -24,7 +24,7 @@ Contains the controllers for the various parts of the application.
 import webbrowser
 
 from prspy.gui.models import MainViewModel
-from prspy.gui.views import MainView
+from prspy.gui.views import MainView, OptionsDialog
 from prspy.github_util import GithubConnect
 
 class MainViewController(object):
@@ -51,6 +51,9 @@ class MainViewController(object):
         # refresh button was clicked in the view
         self.view.connect("on-refresh-clicked", self._on_refresh_clicked)
 
+        # Open options dialog when options button is clicked.
+        self.view.connect("on-options-clicked", self._show_options_dialog)
+
     def show_main_view(self):
         # If it is the first time that the main view
         # was shown, load the data.
@@ -60,8 +63,11 @@ class MainViewController(object):
             self._first_show = False
 
     def refresh_model(self):
-        self.model.set_from_list(self.gh.get_pulls_from_repos(
-                                    self.config.github_org_id))
+        orgs = []
+        if self.config.github_orgs:
+            orgs = self.config.github_orgs.split(",")
+
+        self.model.set_from_list(self.gh.get_pull_requests(orgs, []))
 
     def _on_model_change(self, model, cause):
         self.view.update(model.pull_requests)
@@ -84,3 +90,8 @@ class MainViewController(object):
 
     def _on_refresh_clicked(self, button):
         self.refresh_model()
+
+    def _show_options_dialog(self, button):
+        options = OptionsDialog(self.config)
+        options.show()
+
