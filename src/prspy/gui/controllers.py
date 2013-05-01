@@ -31,7 +31,7 @@ class MainViewController(object):
 
     def __init__(self, config):
         self.config = config
-        self.gh = GithubConnect(config.github_auth_token)
+        self.gh = GithubConnect(config.github_auth_token, self.config.prspy_debug)
         self.model = MainViewModel()
         self.view = MainView(self.model)
 
@@ -63,11 +63,13 @@ class MainViewController(object):
             self._first_show = False
 
     def refresh_model(self):
-        orgs = []
-        if self.config.github_orgs:
-            orgs = self.config.github_orgs.split(",")
 
-        self.model.set_from_list(self.gh.get_pull_requests(orgs, []))
+        repos = []
+        if self.config.github_repos:
+            repos = self.config.github_repos.split(",")
+
+
+        self.model.set_from_list(self.gh.get_pull_requests([], repos))
 
     def _on_model_change(self, model, cause):
         self.view.update(model.pull_requests)
@@ -92,6 +94,37 @@ class MainViewController(object):
         self.refresh_model()
 
     def _show_options_dialog(self, button):
-        options = OptionsDialog(self.config)
-        options.show()
+        options_controller = OptionsDialogController(self.gh, self.config)
+        options_controller.show_view()
+
+
+class OptionsDialogController(object):
+    def __init__(self, gh_connect, config):
+        self.gh_connect = gh_connect
+        self.config = config
+        self.view = OptionsDialog()
+        self.view.connect('on-save', self._on_save)
+        self.view.orgs.connect("on-add-org", self._on_add_org)
+
+    def show_view(self):
+        repos = self.config.github_repos;
+        if not repos:
+            repos = []
+        else:
+            repos = repos.split(",")
+
+        self.view.orgs.set_values(repos)
+        self.view.show()
+
+    def _on_save(self, button):
+        repo_names = self.view.orgs.get_values()
+        self.config.set_property("github", "repos", ",".join(repo_names))
+        self.config.save()
+
+    def _on_add_org(self, button, org_name):
+        if not org_name:
+            return
+        all_repos = self.view.orgs.get_values()
+        all_repos.extend(self.gh_connect.get_repos_for_org(org_name))
+        self.view.orgs.set_values(all_repos)
 

@@ -55,6 +55,7 @@ class PRSpyConfig(object):
             for option in self.parser.options(section):
                 setattr(self, "%s_%s" % (section, option), self.parser.get(section, option))
 
+        self._set_defaults();
         self._validate_all()
 
     def set_property(self, section, option, value):
@@ -67,7 +68,6 @@ class PRSpyConfig(object):
     def _validate_all(self):
         self._validate("github", "auth_token")
         self._validate("github", "org_id")
-        self._validate("github", "orgs")
         self._validate("github", "repos")
 
     def _validate(self, section, option):
@@ -75,6 +75,17 @@ class PRSpyConfig(object):
         if not hasattr(self, attr_name):
             raise NotConfiguredError("Missing configuration property: [%s] %s" % (section, option))
 
+    def _set_defaults(self):
+        if not self.parser.has_section("prspy"):
+            self.parser.add_section("prspy")
+
+        if not self.parser.has_option("prspy", "debug"):
+            self.set_property("prspy", "debug", "False")
+
+        if not self.parser.has_section("github"):
+            self.parser.add_section("github")
+        if not self.parser.has_option("github", "repos"):
+            self.set_property("github", "repos", "")
 
 class ConfigBuilder(object):
 
@@ -100,7 +111,8 @@ class ConfigBuilder(object):
 
         headers = {
             "Authorization": "Basic %s" % auth,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            'User-Agent': "PRSpy"
         }
 
         body = '{"scopes":["public_repo", "repo"], "note":"%s"}' % key_note

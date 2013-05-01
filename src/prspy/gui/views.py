@@ -158,46 +158,53 @@ class MainView(GladeComponent, gobject.GObject):
             self.emit("on-options-clicked")
 
 
-class OptionsDialog(GladeComponent):
-    def __init__(self, config):
+class OptionsDialog(GladeComponent, gobject.GObject):
+    __gsignals__ = {
+        'on-save': (gobject.SIGNAL_RUN_LAST,
+                              gobject.TYPE_NONE, ()),
+    }
+
+    def __init__(self):
         widgets = ["window", "configNotebook", "saveButton", "cancelButton"]
         GladeComponent.__init__(self, "options.glade", initial_widget_names=widgets)
+        gobject.GObject.__init__(self)
 
-        self.config = config
+        self.orgs = RepositoryOptionsTab()
+        self.configNotebook.append_page(self.orgs.get_top_level(), gtk.Label("Repositories"))
 
-        self.orgs = CollectPropertyTab('Org');
-        self.orgs.set_values(self.config.github_orgs.split(","))
-        self.configNotebook.append_page(self.orgs.get_top_level(), gtk.Label("Organizations"))
+        self.saveButton.connect("clicked", self._on_button_click)
+        self.cancelButton.connect("clicked", self._on_button_click)
 
-        self.saveButton.connect("clicked", self.on_save)
-        self.cancelButton.connect("clicked", self.on_cancel)
 
-    def on_save(self, button):
-        self.config.set_property("github", "orgs", ",".join(self.orgs.get_values()))
-        self.config.save()
-        self.window.destroy()
+    def _on_button_click(self, button):
+        if button == self.saveButton:
+            self.emit('on-save')
 
-    def on_cancel(self, button):
         self.window.destroy()
 
 
-class CollectPropertyTab(GladeComponent):
-    def __init__(self, property_label):
-        widgets = ["main_content", "propertyLabel", "propertyField", "actionButton",
-                   "propertyList", "removeButton"]
+class RepositoryOptionsTab(GladeComponent, gobject.GObject):
+    __gsignals__ = {
+        'on-add-org': (gobject.SIGNAL_RUN_LAST,
+                              gobject.TYPE_NONE, (gobject.TYPE_STRING,)),
+    }
+
+    def __init__(self):
+        widgets = ["main_content", "propertyField", "addButton",
+                   "propertyList", "removeButton", "orgRadioButton"]
         GladeComponent.__init__(self, "add_property.glade", initial_widget_names = widgets)
-        self.propertyLabel.set_text(property_label + ":")
+        gobject.GObject.__init__(self)
 
         self.model = gtk.ListStore(str)
         self.propertyList.set_model(self.model)
 
-        column = gtk.TreeViewColumn(property_label)
+        column = gtk.TreeViewColumn("Repository")
         self.propertyList.append_column(column)
         cell = gtk.CellRendererText()
         column.pack_start(cell, False)
         column.add_attribute(cell, "text", 0)
 
-        self.actionButton.connect("clicked", self._add)
+        self.addButton.connect("clicked", self._add)
         self.removeButton.connect("clicked", self._remove)
 
     def _add(self, button):
@@ -205,14 +212,20 @@ class CollectPropertyTab(GladeComponent):
         if not propertyValue:
             return
 
+        if self.orgRadioButton.get_active():
+            # Delegate to the controller to fetch the repo names,
+            # and update the view.
+            self.emit("on-add-org", propertyValue)
+            return;
+
         self.model.append([propertyValue])
         self.propertyField.set_text("")
 
     def _remove(self, button):
         selection = self.propertyList.get_selection()
-        if not selection:
-            return
         model, iter_to_remove = selection.get_selected()
+        if not iter_to_remove:
+            return
         self.model.remove(iter_to_remove)
 
     def set_values(self, values):
