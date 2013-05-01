@@ -31,7 +31,7 @@ class MainViewController(object):
 
     def __init__(self, config):
         self.config = config
-        self.gh = GithubConnect(config.github_auth_token, self.config.prspy_debug)
+        self.gh = GithubConnect(config.github_auth_token, self.config.prspy_debug == "True")
         self.model = MainViewModel()
         self.view = MainView(self.model)
 
@@ -105,6 +105,7 @@ class OptionsDialogController(object):
         self.view = OptionsDialog()
         self.view.connect('on-save', self._on_save)
         self.view.orgs.connect("on-add-org", self._on_add_org)
+        self.view.orgs.connect("on-add-repo", self._on_add_repo)
 
     def show_view(self):
         repos = self.config.github_repos;
@@ -122,9 +123,12 @@ class OptionsDialogController(object):
         self.config.save()
 
     def _on_add_org(self, button, org_name):
-        if not org_name:
-            return
-        all_repos = self.view.orgs.get_values()
-        all_repos.extend(self.gh_connect.get_repos_for_org(org_name))
-        self.view.orgs.set_values(all_repos)
+        self._update_repos_list(self.gh_connect.get_repos_for_org(org_name))
 
+    def _on_add_repo(self, button, repo_name):
+        self._update_repos_list([repo_name])
+
+    def _update_repos_list(self, new_repos):
+        all_repos = set(self.view.orgs.get_values())
+        all_repos.update(new_repos)
+        self.view.orgs.set_values(sorted(all_repos))

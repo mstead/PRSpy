@@ -187,6 +187,8 @@ class RepositoryOptionsTab(GladeComponent, gobject.GObject):
     __gsignals__ = {
         'on-add-org': (gobject.SIGNAL_RUN_LAST,
                               gobject.TYPE_NONE, (gobject.TYPE_STRING,)),
+        'on-add-repo': (gobject.SIGNAL_RUN_LAST,
+                              gobject.TYPE_NONE, (gobject.TYPE_STRING,)),
     }
 
     def __init__(self):
@@ -216,9 +218,9 @@ class RepositoryOptionsTab(GladeComponent, gobject.GObject):
             # Delegate to the controller to fetch the repo names,
             # and update the view.
             self.emit("on-add-org", propertyValue)
-            return;
+        else:
+            self.emit("on-add-repo", propertyValue)
 
-        self.model.append([propertyValue])
         self.propertyField.set_text("")
 
     def _remove(self, button):
@@ -229,6 +231,7 @@ class RepositoryOptionsTab(GladeComponent, gobject.GObject):
         self.model.remove(iter_to_remove)
 
     def set_values(self, values):
+        self.model.clear()
         for value in values:
             if value:
                 self.model.append([value])
