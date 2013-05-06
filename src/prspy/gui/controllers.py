@@ -24,13 +24,16 @@ Contains the controllers for the various parts of the application.
 import webbrowser
 
 from prspy.gui.models import MainViewModel
-from prspy.gui.views import MainView, OptionsDialog
-from prspy.github_util import GithubConnect
+from prspy.gui.views import MainView, OptionsDialog, RepositoryOptionsTab,\
+    AuthOptionsTab
+from prspy.github_util import GithubConnect, GithubAuthTokenConnector
 
 class MainViewController(object):
 
     def __init__(self, config):
         self.config = config
+        self.config.connect("on-change", self._on_config_change)
+
         self.gh = GithubConnect(config.github_auth_token, self.config.prspy_debug == "True")
         self.model = MainViewModel()
         self.view = MainView(self.model)
@@ -58,9 +61,11 @@ class MainViewController(object):
         # If it is the first time that the main view
         # was shown, load the data.
         self.view.show()
+        self.view.on_config_update(self.config)
         if self._first_show:
-            self.refresh_model()
             self._first_show = False
+        if self.config.github_auth_token and self._first_show:
+            self.refresh_model()
 
     def refresh_model(self):
 
@@ -70,6 +75,12 @@ class MainViewController(object):
 
 
         self.model.set_from_list(self.gh.get_pull_requests([], repos))
+
+    def _on_config_change(self, config):
+        #update our github connection as the token may have changed
+        # from the options dialog.
+        self.gh = GithubConnect(self.config.github_auth_token, self.config.prspy_debug == "True")
+        self.view.on_config_update(self.config)
 
     def _on_model_change(self, model, cause):
         self.view.update(model.pull_requests)
@@ -103,9 +114,19 @@ class OptionsDialogController(object):
         self.gh_connect = gh_connect
         self.config = config
         self.view = OptionsDialog()
-        self.view.connect('on-save', self._on_save)
-        self.view.orgs.connect("on-add-org", self._on_add_org)
-        self.view.orgs.connect("on-add-repo", self._on_add_repo)
+
+        # Repository Configuration Tab
+        self.repos_tab = RepositoryOptionsTab()
+        self.repos_tab.connect("on-add-org", self._on_add_org)
+        self.repos_tab.connect("on-add-repo", self._on_add_repo)
+        self.repos_tab.connect("on-remove-repo", self._on_remove_repo)
+        self.view.add_tab("Repositories", self.repos_tab)
+
+        # Auth Configuration Tab
+        self.auth_tab = AuthOptionsTab()
+        self.auth_tab.connect("on-delete-auth-token", self._on_delete_auth_token)
+        self.auth_tab.connect("on-create-update-auth-token", self._on_create_update_auth_token)
+        self.view.add_tab("Authorization", self.auth_tab)
 
     def show_view(self):
         repos = self.config.github_repos;
@@ -114,21 +135,42 @@ class OptionsDialogController(object):
         else:
             repos = repos.split(",")
 
-        self.view.orgs.set_values(repos)
+        self.repos_tab.set_values(repos)
+        self.auth_tab.update(self.config.github_auth_token)
         self.view.show()
 
-    def _on_save(self, button):
-        repo_names = self.view.orgs.get_values()
-        self.config.set_property("github", "repos", ",".join(repo_names))
-        self.config.save()
-
-    def _on_add_org(self, button, org_name):
+    def _on_add_org(self, tab, org_name):
         self._update_repos_list(self.gh_connect.get_repos_for_org(org_name))
 
-    def _on_add_repo(self, button, repo_name):
+    def _on_add_repo(self, tab, repo_name):
         self._update_repos_list([repo_name])
 
-    def _update_repos_list(self, new_repos):
-        all_repos = set(self.view.orgs.get_values())
+    def _on_remove_repo(self, view):
+        # The repo has already been removed from the list.
+        # We only need to update with an empty list
+        self._update_repos_list()
+
+    def _update_repos_list(self, new_repos=[]):
+        all_repos = set(self.repos_tab.get_values())
         all_repos.update(new_repos)
-        self.view.orgs.set_values(sorted(all_repos))
+        self.config.set_property("github", "repos", ",".join(all_repos))
+        self.config.save()
+        self.repos_tab.set_values(sorted(all_repos))
+
+    def _on_create_update_auth_token(self, tab, action):
+        con = GithubAuthTokenConnector(self.auth_tab.usernameField.get_text(), self.auth_tab.passwordField.get_text())
+        if action == AuthOptionsTab.UPDATE_ACTION:
+            self._on_delete_auth_token(tab)
+        token = con.create_token()
+        self.config.set_property("github", "auth_token", token)
+        self.config.save()
+        self.auth_tab.update(self.config.github_auth_token)
+
+    def _on_delete_auth_token(self, tab):
+        con = GithubAuthTokenConnector(self.auth_tab.usernameField.get_text(), self.auth_tab.passwordField.get_text())
+        if con.delete_token():
+            self.config.set_property("github", "auth_token", "")
+            self.config.save()
+        self.auth_tab.update(self.config.github_auth_token)
+
+

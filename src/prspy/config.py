@@ -25,6 +25,7 @@ import simplejson
 from getpass import getpass
 
 from prspy.utils import get_input
+import gobject
 
 
 # General Application
@@ -40,23 +41,37 @@ if not os.path.exists(APP_HOME_DIR):
 class NotConfiguredError(Exception):
     pass
 
+class ConfigurationError(Exception):
+    pass
 
-class PRSpyConfig(object):
+class PRSpyConfig(gobject.GObject):
+    __gsignals__ = {
+        'on-change': (gobject.SIGNAL_RUN_LAST,
+                              gobject.TYPE_NONE,
+                              ()),
+    }
 
     def __init__(self):
-        if not os.path.isfile(CONFIG_FILE):
-            raise NotConfiguredError("Config file not found")
-
+        gobject.GObject.__init__(self)
         self.parser = ConfigParser.SafeConfigParser()
-        if not self.parser.read(CONFIG_FILE):
-            raise NotConfiguredError("Unable to read config file.")
+        if os.path.exists(CONFIG_FILE) and os.path.isfile(CONFIG_FILE):
+            if not self.parser.read(CONFIG_FILE):
+                raise NotConfiguredError("Unable to read config file.")
+        else:
+            # Create a default configuration
+            self.parser.add_section("prspy")
+            self.parser.set("prspy", "debug", "False")
+
+            self.parser.add_section("github")
+            self.parser.set("github", "auth_token", "")
+            self.parser.set("github", "repos", "")
+            self.parser.write(file(CONFIG_FILE, "w"))
+
+        self._validate_all()
 
         for section in self.parser.sections():
             for option in self.parser.options(section):
                 setattr(self, "%s_%s" % (section, option), self.parser.get(section, option))
-
-        self._set_defaults();
-        self._validate_all()
 
     def set_property(self, section, option, value):
         self.parser.set(section, option, value)
@@ -64,28 +79,20 @@ class PRSpyConfig(object):
 
     def save(self):
         self.parser.write(file(CONFIG_FILE, "w"))
+        self.emit("on-change")
 
     def _validate_all(self):
+        self._validate("prspy", "debug")
         self._validate("github", "auth_token")
-        self._validate("github", "org_id")
         self._validate("github", "repos")
 
     def _validate(self, section, option):
-        attr_name = "%s_%s" % (section, option)
-        if not hasattr(self, attr_name):
-            raise NotConfiguredError("Missing configuration property: [%s] %s" % (section, option))
+        if not self.parser.has_section(section):
+            raise ConfigurationError("Missing configuration section: %s" % section)
 
-    def _set_defaults(self):
-        if not self.parser.has_section("prspy"):
-            self.parser.add_section("prspy")
+        if not self.parser.has_option(section, option):
+            raise ConfigurationError("Missing option for % section: %s" % (section, option))
 
-        if not self.parser.has_option("prspy", "debug"):
-            self.set_property("prspy", "debug", "False")
-
-        if not self.parser.has_section("github"):
-            self.parser.add_section("github")
-        if not self.parser.has_option("github", "repos"):
-            self.set_property("github", "repos", "")
 
 class ConfigBuilder(object):
 

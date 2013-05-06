@@ -78,3 +78,34 @@ class GithubConnect(object):
         repo = source.get_repo(repo_name)
         return PullRequest(repo.get_pull(int(pull_number)));
 
+class GithubAuthTokenConnector(object):
+
+    __DEFAULT_SCOPES = ["public_repo", "repo"]
+    __DEFAULT_NOTE = "PRSpy"
+
+    def __init__(self, username, password):
+        self.gh = Github(username, password)
+
+    def delete_token(self):
+        user = self.gh.get_user()
+        auths = list(user.get_authorizations())
+        for auth in auths:
+            if auth.note == self.__DEFAULT_NOTE:
+                try:
+                    auth.delete()
+                    return True
+                except GithubException:
+                    return False
+        return False
+
+    def create_token(self):
+        user = self.gh.get_user()
+        auths = list(user.get_authorizations())
+        for auth in auths:
+            if auth.note == self.__DEFAULT_NOTE:
+                # Key already exists.
+                return auth.token
+
+        auth = user.create_authorization(scopes = self.__DEFAULT_SCOPES, note=self.__DEFAULT_NOTE)
+        return auth.token
+

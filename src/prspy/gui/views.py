@@ -157,44 +157,48 @@ class MainView(GladeComponent, gobject.GObject):
         elif button == self.preferences_button:
             self.emit("on-options-clicked")
 
+    def on_config_update(self, config):
+        self.refresh_button.set_sensitive(len(config.github_auth_token) != 0)
 
-class OptionsDialog(GladeComponent, gobject.GObject):
-    __gsignals__ = {
-        'on-save': (gobject.SIGNAL_RUN_LAST,
-                              gobject.TYPE_NONE, ()),
-    }
+
+class OptionsDialog(GladeComponent):
 
     def __init__(self):
-        widgets = ["window", "configNotebook", "saveButton", "cancelButton"]
+        widgets = ["window", "configNotebook", "closeButton"]
         GladeComponent.__init__(self, "options.glade", initial_widget_names=widgets)
-        gobject.GObject.__init__(self)
 
-        self.orgs = RepositoryOptionsTab()
-        self.configNotebook.append_page(self.orgs.get_top_level(), gtk.Label("Repositories"))
+        self.tabs = []
 
-        self.saveButton.connect("clicked", self._on_button_click)
-        self.cancelButton.connect("clicked", self._on_button_click)
+        self.closeButton.connect("clicked", self._on_close_clicked)
 
+    def add_tab(self, tab_name, options_tab):
+        self.tabs.append(options_tab)
+        self.configNotebook.append_page(options_tab.get_top_level(), gtk.Label(tab_name))
 
-    def _on_button_click(self, button):
-        if button == self.saveButton:
-            self.emit('on-save')
-
+    def _on_close_clicked(self, button):
         self.window.destroy()
 
+class OptionsDialogTab(GladeComponent):
+    def __init__(self, glade_file, widget_names):
+        GladeComponent.__init__(self, glade_file, initial_widget_names = widget_names)
 
-class RepositoryOptionsTab(GladeComponent, gobject.GObject):
+    def get_top_level(self):
+        raise NotImplementedError("Must implement get_top_level")
+
+class RepositoryOptionsTab(OptionsDialogTab, gobject.GObject):
     __gsignals__ = {
         'on-add-org': (gobject.SIGNAL_RUN_LAST,
                               gobject.TYPE_NONE, (gobject.TYPE_STRING,)),
         'on-add-repo': (gobject.SIGNAL_RUN_LAST,
                               gobject.TYPE_NONE, (gobject.TYPE_STRING,)),
+        'on-remove-repo': (gobject.SIGNAL_RUN_LAST,
+                              gobject.TYPE_NONE, ()),
     }
 
     def __init__(self):
         widgets = ["main_content", "propertyField", "addButton",
                    "propertyList", "removeButton", "orgRadioButton"]
-        GladeComponent.__init__(self, "add_property.glade", initial_widget_names = widgets)
+        OptionsDialogTab.__init__(self, "repositories_tab.glade", widgets)
         gobject.GObject.__init__(self)
 
         self.model = gtk.ListStore(str)
@@ -229,6 +233,7 @@ class RepositoryOptionsTab(GladeComponent, gobject.GObject):
         if not iter_to_remove:
             return
         self.model.remove(iter_to_remove)
+        self.emit("on-remove-repo")
 
     def set_values(self, values):
         self.model.clear()
@@ -247,3 +252,49 @@ class RepositoryOptionsTab(GladeComponent, gobject.GObject):
     def get_top_level(self):
         return self.main_content
 
+
+class AuthOptionsTab(OptionsDialogTab, gobject.GObject):
+    __gsignals__ = {
+        'on-create-update-auth-token': (gobject.SIGNAL_RUN_LAST,
+                              gobject.TYPE_NONE, (gobject.TYPE_STRING,)),
+        'on-delete-auth-token': (gobject.SIGNAL_RUN_LAST,
+                              gobject.TYPE_NONE, ()),
+    }
+
+    CREATE_ACTION = "CREATE"
+    UPDATE_ACTION = "UPDATE"
+
+    def __init__(self):
+        widgets = ["main_content", "usernameField", "passwordField",
+                   "messageLabel", "deleteButton", "createUpdateButton"]
+        OptionsDialogTab.__init__(self, "auth_tab.glade", widgets)
+        gobject.GObject.__init__(self)
+
+        self.createUpdateButton.connect("clicked", self._on_button_click)
+        self.deleteButton.connect("clicked", self._on_button_click)
+
+        self.current_action = self.CREATE_ACTION
+
+    def update(self, auth_token):
+        if auth_token:
+            self.current_action = self.UPDATE_ACTION
+            self.messageLabel.set_text("PRSpy is already registered.")
+            self.deleteButton.show()
+            self.createUpdateButton.set_label("Update")
+        else:
+            self.current_action = self.CREATE_ACTION
+            self.messageLabel.set_text("No OAuth token found.\nPRSpy requires a github OAuth token to authenticate.")
+            self.deleteButton.hide()
+            self.createUpdateButton.set_label("Create")
+
+    def _on_button_click(self, button):
+        if not self.usernameField.get_text() or not self.passwordField.get_text():
+            return
+
+        if button == self.createUpdateButton:
+            self.emit("on-create-update-auth-token", self.current_action)
+        else:
+            self.emit("on-delete-auth-token")
+
+    def get_top_level(self):
+        return self.main_content
