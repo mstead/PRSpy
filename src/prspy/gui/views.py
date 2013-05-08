@@ -283,7 +283,8 @@ class AuthOptionsTab(OptionsDialogTab, gobject.GObject):
             self.createUpdateButton.set_label("Update")
         else:
             self.current_action = self.CREATE_ACTION
-            self.messageLabel.set_text("No OAuth token found.\nPRSpy requires a github OAuth token to authenticate.")
+            self.messageLabel.set_text("PRSpy requires an OAuth token to authenticate with github.\n"
+                                       "Please enter your github username and password to create one.")
             self.deleteButton.hide()
             self.createUpdateButton.set_label("Create")
 
@@ -295,6 +296,10 @@ class AuthOptionsTab(OptionsDialogTab, gobject.GObject):
             self.emit("on-create-update-auth-token", self.current_action)
         else:
             self.emit("on-delete-auth-token")
+
+        # clear the input fields
+        self.usernameField.set_text("")
+        self.passwordField.set_text("")
 
     def get_top_level(self):
         return self.main_content
