@@ -196,7 +196,7 @@ class RepositoryOptionsTab(OptionsDialogTab, gobject.GObject):
     }
 
     def __init__(self):
-        widgets = ["main_content", "propertyField", "addButton",
+        widgets = ["window", "main_content", "propertyField", "addButton",
                    "propertyList", "removeButton", "orgRadioButton"]
         OptionsDialogTab.__init__(self, "repositories_tab.glade", widgets)
         gobject.GObject.__init__(self)
