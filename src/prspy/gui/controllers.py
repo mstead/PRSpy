@@ -126,7 +126,7 @@ class OptionsDialogController(object):
         # Auth Configuration Tab
         self.auth_tab = AuthOptionsTab()
         self.auth_tab.connect("on-delete-auth-token", self._on_delete_auth_token)
-        self.auth_tab.connect("on-create-update-auth-token", self._on_create_update_auth_token)
+        self.auth_tab.connect("on-register", self._on_register)
         self.view.add_tab("Authorization", self.auth_tab)
 
     def show_view(self):
@@ -158,10 +158,8 @@ class OptionsDialogController(object):
         self.config.save()
         self.repos_tab.set_values(sorted(all_repos))
 
-    def _on_create_update_auth_token(self, tab, action):
+    def _on_register(self, tab):
         con = GithubAuthTokenConnector(self.auth_tab.usernameField.get_text(), self.auth_tab.passwordField.get_text())
-        if action == AuthOptionsTab.UPDATE_ACTION:
-            self._on_delete_auth_token(tab)
         token = con.create_token()
         self.config.set_property("github", "auth_token", token)
         self.config.save()

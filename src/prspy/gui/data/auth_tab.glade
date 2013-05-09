@@ -172,7 +172,7 @@
           </packing>
         </child>
         <child>
-          <object class="GtkButton" id="createUpdateButton">
+          <object class="GtkButton" id="registerButton">
             <property name="label" translatable="yes">Create</property>
             <property name="use_action_appearance">False</property>
             <property name="width_request">70</property>

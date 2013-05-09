@@ -255,45 +255,38 @@ class RepositoryOptionsTab(OptionsDialogTab, gobject.GObject):
 
 class AuthOptionsTab(OptionsDialogTab, gobject.GObject):
     __gsignals__ = {
-        'on-create-update-auth-token': (gobject.SIGNAL_RUN_LAST,
-                              gobject.TYPE_NONE, (gobject.TYPE_STRING,)),
+        'on-register': (gobject.SIGNAL_RUN_LAST,
+                              gobject.TYPE_NONE, ()),
         'on-delete-auth-token': (gobject.SIGNAL_RUN_LAST,
                               gobject.TYPE_NONE, ()),
     }
 
-    CREATE_ACTION = "CREATE"
-    UPDATE_ACTION = "UPDATE"
-
     def __init__(self):
         widgets = ["main_content", "usernameField", "passwordField",
-                   "messageLabel", "deleteButton", "createUpdateButton"]
+                   "messageLabel", "deleteButton", "registerButton"]
         OptionsDialogTab.__init__(self, "auth_tab.glade", widgets)
         gobject.GObject.__init__(self)
 
-        self.createUpdateButton.connect("clicked", self._on_button_click)
+        self.registerButton.connect("clicked", self._on_button_click)
         self.deleteButton.connect("clicked", self._on_button_click)
-
-        self.current_action = self.CREATE_ACTION
 
     def update(self, auth_token):
         if auth_token:
-            self.current_action = self.UPDATE_ACTION
             self.messageLabel.set_text("PRSpy is already registered.")
             self.deleteButton.show()
-            self.createUpdateButton.set_label("Update")
+            self.registerButton.hide()
         else:
-            self.current_action = self.CREATE_ACTION
             self.messageLabel.set_text("PRSpy requires an OAuth token to authenticate with github.\n"
                                        "Please enter your github username and password to create one.")
             self.deleteButton.hide()
-            self.createUpdateButton.set_label("Create")
+            self.registerButton.show()
 
     def _on_button_click(self, button):
         if not self.usernameField.get_text() or not self.passwordField.get_text():
             return
 
-        if button == self.createUpdateButton:
-            self.emit("on-create-update-auth-token", self.current_action)
+        if button == self.registerButton:
+            self.emit("on-register")
         else:
             self.emit("on-delete-auth-token")
 
