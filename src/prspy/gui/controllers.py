@@ -62,10 +62,11 @@ class MainViewController(object):
         # was shown, load the data.
         self.view.show()
         self.view.on_config_update(self.config)
-        if self._first_show:
-            self._first_show = False
         if self.config.github_auth_token and self._first_show:
             self.refresh_model()
+
+        if self._first_show:
+            self._first_show = False
 
     def refresh_model(self):
 
