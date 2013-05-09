@@ -8,12 +8,9 @@ import time
 import gtk
 import glib
 
-from prspy.utils import get_yes_no
 from prspy import config
-from prspy.gui.component import StatusIcon
-from prspy.github_util import GithubConnect
 from prspy.gui.controllers import MainViewController
-from prspy.config import NotConfiguredError, PRSpyConfig, ConfigBuilder
+from prspy.config import NotConfiguredError, PRSpyConfig
 
 
 class PRSpyError(Exception):
@@ -28,29 +25,10 @@ class PRSpy():
             print "An error occurred reading the PRSpy config file:"
             print "    %s" % e.message
             print ""
-            if get_yes_no("Would you like to (re)configure PRSpy?"):
-                config = ConfigBuilder().build()
-            else:
-                sys.exit(0)
-
-
-        self.status_icon = StatusIcon()
-        self.status_icon.connect('activate', self._on_activate)
-        self.status_icon.connect('force_clicked', self._update)
-        self.status_icon.connect('quit_clicked', self._exit_app)
-
+            sys.exit(1)
 
         self.main_view_controller = MainViewController(config)
-
-    def _on_activate(self, icon):
         self.main_view_controller.show_main_view()
-        self.status_icon.reset_icon_state()
-
-    def _update(self, icon):
-        self.main_view_controller.refresh_model()
-
-    def _exit_app(self, icon):
-        gtk.main_quit()
 
 
 if __name__ == "__main__":
@@ -63,7 +41,7 @@ if __name__ == "__main__":
 
     try:
         PRSpy()
-        gtk.main()
+        sys.exit(gtk.main() or 0)
     except PRSpyError, e:
         print e.message
         sys.exit(1)
