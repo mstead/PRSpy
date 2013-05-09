@@ -2,7 +2,6 @@
 <interface>
   <requires lib="gtk+" version="2.24"/>
   <!-- interface-naming-policy project-wide -->
-  <object class="GtkAction" id="action1"/>
   <object class="GtkWindow" id="window">
     <property name="width_request">1024</property>
     <property name="height_request">768</property>
@@ -85,6 +84,7 @@
                           <object class="GtkTreeView" id="event_tree_view">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="has_focus">True</property>
                           </object>
                           <packing>
                             <property name="expand">True</property>

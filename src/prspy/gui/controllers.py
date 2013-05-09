@@ -106,15 +106,15 @@ class MainViewController(object):
         self.refresh_model()
 
     def _show_options_dialog(self, button):
-        options_controller = OptionsDialogController(self.gh, self.config)
+        options_controller = OptionsDialogController(self.gh, self.config, self.view)
         options_controller.show_view()
 
 
 class OptionsDialogController(object):
-    def __init__(self, gh_connect, config):
+    def __init__(self, gh_connect, config, parent=None):
         self.gh_connect = gh_connect
         self.config = config
-        self.view = OptionsDialog()
+        self.view = OptionsDialog(parent)
 
         # Repository Configuration Tab
         self.repos_tab = RepositoryOptionsTab()
@@ -171,5 +171,4 @@ class OptionsDialogController(object):
             self.config.set_property("github", "auth_token", "")
             self.config.save()
         self.auth_tab.update(self.config.github_auth_token)
-
 

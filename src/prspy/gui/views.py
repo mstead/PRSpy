@@ -163,13 +163,16 @@ class MainView(GladeComponent, gobject.GObject):
 
 class OptionsDialog(GladeComponent):
 
-    def __init__(self):
+    def __init__(self, parent=None):
         widgets = ["window", "configNotebook", "closeButton"]
         GladeComponent.__init__(self, "options.glade", initial_widget_names=widgets)
 
-        self.tabs = []
-
+        self.window.set_transient_for(parent.window)
+        self.window.set_modal(True)
+        self.window.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
         self.closeButton.connect("clicked", self._on_close_clicked)
+
+        self.tabs = []
 
     def add_tab(self, tab_name, options_tab):
         self.tabs.append(options_tab)
