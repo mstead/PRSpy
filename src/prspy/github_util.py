@@ -28,6 +28,8 @@ class GithubConnect(object):
 
         self._connection = Github(gh_auth_token)
 
+    def reconfigure(self, gh_auth_token):
+        self._connection = self._connection = Github(gh_auth_token)
 
     def get_pull_requests(self, orgs, repos):
         pulls = []

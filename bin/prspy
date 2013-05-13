@@ -8,10 +8,10 @@ import time
 import gtk
 import glib
 
-from prspy import config
-from prspy.gui.controllers import MainViewController
-from prspy.config import NotConfiguredError, PRSpyConfig
+from prspy.config import NotConfiguredError, PRSpyConfig, APP_LOG_FILE
+from prspy.gui.main import MainViewController
 
+gtk.threads_init()
 
 class PRSpyError(Exception):
     pass
@@ -27,6 +27,7 @@ class PRSpy():
             print ""
             sys.exit(1)
 
+
         self.main_view_controller = MainViewController(config)
         self.main_view_controller.show_main_view()
 
@@ -35,7 +36,7 @@ if __name__ == "__main__":
     logger = logging.getLogger("PRSpy")
     logger.setLevel(logging.INFO)
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    handler = logging.FileHandler(config.APP_LOG_FILE)
+    handler = logging.FileHandler(APP_LOG_FILE)
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 

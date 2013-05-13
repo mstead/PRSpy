@@ -19,7 +19,8 @@ setup(
 	},
 	packages=find_packages('src'),
 	include_package_data=True,
-        data_files=[('prspy/gui/data', find_files("src/prspy/gui/data"))],
+        data_files=[('prspy/gui/data', find_files("src/prspy/gui/data")),
+                    ('prspy/gui/img', find_files('src/prspy/gui/img'))],
 	scripts = [
 		'bin/prspy',
 	],
