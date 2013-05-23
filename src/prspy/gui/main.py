@@ -81,10 +81,11 @@ class MainView(GladeComponent):
         self._add_column(self.event_tree_view, "Assignee", 5)
 
         # configure comments list view
-        self.comment_list_view_model = gtk.ListStore(str, str)
+        self.comment_list_view_model = gtk.ListStore(str, str, str)
         self.comments_tab_list_view.set_model(self.comment_list_view_model)
         self._add_column(self.comments_tab_list_view, "Author", 0)
         self._add_column(self.comments_tab_list_view, "Comment", 1, markup=True)
+        self._add_column(self.comments_tab_list_view, "Date", 2)
         self.comments_tab_list_view.get_selection().set_mode(gtk.SELECTION_NONE)
         self.comments_tab_list_view.set_rules_hint(True)
 
@@ -294,6 +295,8 @@ class AsyncMainWindowUpdate(Thread):
             for commit in list(self.pull_request.get_commits()):
                 comments.extend(commit.get_comments())
 
+            comments.sort()
+
             # Only update if the currently selected pull request is
             # still selected after the comments are pulled from the
             # server.
@@ -303,7 +306,8 @@ class AsyncMainWindowUpdate(Thread):
             for comment in comments:
                 gtk.threads_enter()
                 self.main_window.comment_list_view_model.append([comment.user.login,
-                                                     self.main_window._build_comment_text(comment)])
+                                                     self.main_window._build_comment_text(comment),
+                                                     comment.created_at])
                 gtk.threads_leave()
 
             # Hide loading icon after we are done.
