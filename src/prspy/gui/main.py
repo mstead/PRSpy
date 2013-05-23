@@ -82,12 +82,13 @@ class MainView(GladeComponent):
         self._add_column(self.event_tree_view, "Created", 6)
 
         # configure comments list view
-        self.comment_list_view_model = gtk.ListStore(str, str, str)
+        self.comment_list_view_model = gtk.ListStore(str, str, str, str)
         self.comments_tab_list_view.set_model(self.comment_list_view_model)
         self._add_column(self.comments_tab_list_view, "Author", 0)
         self._add_column(self.comments_tab_list_view, "Comment", 1, markup=True,
                          expand=True)
         self._add_column(self.comments_tab_list_view, "Date", 2)
+        self._add_column(self.comments_tab_list_view, "Url", 3, visible=False)
         self.comments_tab_list_view.get_selection().set_mode(gtk.SELECTION_NONE)
         self.comments_tab_list_view.set_rules_hint(True)
 
@@ -214,7 +215,10 @@ class MainViewController(object):
 
         # When a row is double clicked, open the pull request in the
         # default browser.
-        self.view.event_tree_view.connect("row-activated", self._on_row_double_click)
+        self.view.event_tree_view.connect("row-activated", self._on_pull_request_row_double_click)
+
+        # When a comment row is doubleclicked, open it in the browser.
+        self.view.comments_tab_list_view.connect("row-activated", self._on_comment_row_double_click)
 
     def show_main_view(self):
         # If it is the first time that the main view
@@ -255,11 +259,17 @@ class MainViewController(object):
         self.view.selected_pull = pull
         self.view.update_details(pull)
 
-    def _on_row_double_click(self, treeview, path, column):
+    def _on_pull_request_row_double_click(self, treeview, path, column):
         tree_iter = treeview.get_model().get_iter(path)
         selection = treeview.get_model().get(tree_iter, 0)
         pull_request_num = int(selection[0])
         self._open_pull_request_in_browser(pull_request_num)
+
+    def _on_comment_row_double_click(self, treeview, path, column):
+        tree_iter = treeview.get_model().get_iter(path)
+        selection = treeview.get_model().get(tree_iter, 3)
+        url = selection[0]
+        self._open_comment_in_browser(url)
 
     def _open_pull_request_in_browser(self, pull_request_num):
         if not pull_request_num in self.model.pull_requests:
@@ -267,6 +277,11 @@ class MainViewController(object):
 
         pull_request = self.model.pull_requests[pull_request_num]
         webbrowser.open(pull_request.html_url, 0, True)
+
+    def _open_comment_in_browser(self, url):
+        if not url:
+            return
+        webbrowser.open(url, 0, True)
 
     def _on_quit_clicked(self, button):
         self.quit()
@@ -319,7 +334,7 @@ class AsyncMainWindowUpdate(Thread):
                 gtk.threads_enter()
                 self.main_window.comment_list_view_model.append([comment.user.login,
                                                      self.main_window._build_comment_text(comment),
-                                                     comment.created_at])
+                                                     comment.created_at, comment.html_url])
                 gtk.threads_leave()
 
             # Hide loading icon after we are done.

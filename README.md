@@ -42,5 +42,6 @@ For example: mstead/prspy
 +++ Dependancies +++
 Listing required dependencies here for now until I get around to packaging.
 
-1. PyGithub (https://github.com/jacquev6/PyGithub)
+1. PyGithub v1.16.0 (https://github.com/jacquev6/PyGithub)
+sudo easy_install PyGithub
 
