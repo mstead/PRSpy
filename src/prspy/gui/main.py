@@ -81,6 +81,8 @@ class MainView(GladeComponent):
         self._add_column(self.event_tree_view, "Assignee", 5)
         self._add_column(self.event_tree_view, "Created", 6)
 
+        self._set_treeview_rows_actionable(self.event_tree_view)
+
         # configure comments list view
         self.comment_list_view_model = gtk.ListStore(str, str, str, str)
         self.comments_tab_list_view.set_model(self.comment_list_view_model)
@@ -92,11 +94,46 @@ class MainView(GladeComponent):
         self.comments_tab_list_view.get_selection().set_mode(gtk.SELECTION_NONE)
         self.comments_tab_list_view.set_rules_hint(True)
 
+        self._set_treeview_rows_actionable(self.comments_tab_list_view)
+
         # Loading icon init
         self.loading_image.set_from_animation(LOADING_IMAGE)
         self.show_loading(False)
 
         self._clear_details()
+
+    def _set_treeview_rows_actionable(self, treeview):
+        treeview.connect("motion-notify-event", self._on_mouse_on_row)
+        treeview.connect("enter-notify-event", self._on_enter_leave_treeview)
+        treeview.connect("leave-notify-event", self._on_enter_leave_treeview)
+
+    def _on_enter_leave_treeview(self, widget, event):
+        """
+        Reset to default cursor.
+
+        Used when mouse enters/leaves a treeview to ensure
+        that cursor is reset correctly when mouse is not
+        over a row.
+        """
+        widget.window.set_cursor(None)
+
+    def _on_mouse_on_row(self, widget, event):
+        """
+        If the mouse is moved over a treeview row, change the
+        cursor so that the user is aware that an action will
+        be fired if the row is double clicked.
+        """
+        x, y = widget.get_pointer()
+        row_tuple = widget.get_dest_row_at_pos(x, y)
+        if not row_tuple:
+            widget.window.set_cursor(None)
+            return
+
+        cursor = gtk.gdk.Cursor(gtk.gdk.IRON_CROSS)
+        widget.window.set_cursor(cursor)
+
+    def _on_list_view_leave(self, widget, event):
+        print "Leaving list view\n"
 
     def show_loading(self, show):
         if show:
