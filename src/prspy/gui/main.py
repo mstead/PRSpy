@@ -295,7 +295,7 @@ class AsyncMainWindowUpdate(Thread):
             for commit in list(self.pull_request.get_commits()):
                 comments.extend(commit.get_comments())
 
-            comments.sort()
+            comments.sort(key=lambda comment: comment.created_at)
 
             # Only update if the currently selected pull request is
             # still selected after the comments are pulled from the
