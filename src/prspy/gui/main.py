@@ -62,7 +62,7 @@ class MainView(GladeComponent):
     def __init__(self):
         widgets = ["window", "event_tree_view", "comments_container", "body",
                    "quit_button", "refresh_button", "preferences_button",
-                   "comments_tab_list_view", "loading_image"]
+                   "comments_tab_list_view", "loading_image", "comments_tab_label"]
         GladeComponent.__init__(self, "ghui_main.glade", initial_widget_names=widgets)
 
         self.selected_pull = None
@@ -240,8 +240,10 @@ class MainViewController(object):
         self.view.update(model.pull_requests.values())
 
     def _on_selection_change(self, tree_selection):
+        self.view.comments_tab_label.set_text("Comments")
         model, tree_iter = tree_selection.get_selected()
         if not tree_iter:
+            self.view.update_details(None)
             return
 
         selection = model.get(tree_iter, 0)
@@ -308,6 +310,10 @@ class AsyncMainWindowUpdate(Thread):
             # server.
             if self.main_window.selected_pull != self.pull_request:
                 return
+
+            gtk.threads_enter()
+            self.main_window.comments_tab_label.set_text("Comments (%s)" % len(comments))
+            gtk.threads_leave()
 
             for comment in comments:
                 gtk.threads_enter()
