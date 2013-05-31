@@ -2,7 +2,7 @@
 Encoding=UTF-8
 Name=PRSpy
 Exec=prspy
-Icon=prspy
+Icon=prspy.png
 Type=Application
 Categories=Development
 Terminal=false

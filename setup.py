@@ -21,7 +21,8 @@ setup(
 	include_package_data=True,
         data_files=[('prspy/gui/data', find_files("src/prspy/gui/data")),
                     ('prspy/gui/img', find_files('src/prspy/gui/img')),
-                    ('/usr/share/applications', find_files("desktop"))],
+                    ('/usr/share/applications', find_files("desktop")),
+                    ('/usr/share/icons/', ['prspy.png'])],
 	scripts = [
 		'bin/prspy',
 	],
