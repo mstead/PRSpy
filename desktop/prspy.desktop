@@ -1,0 +1,8 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=PRSpy
+Exec=prspy
+Icon=prspy
+Type=Application
+Categories=Development
+Terminal=false
