@@ -69,16 +69,17 @@ class MainView(GladeComponent):
 
         # Configure pull request treeview.
         self.event_tree_view.set_property("enable-grid-lines", True)
-        self.tree_view_model = gtk.ListStore(str, str, str, str, str, str)
+        self.tree_view_model = gtk.ListStore(str, str, str, str, str, str, str)
         self.event_tree_view.set_model(self.tree_view_model)
         self.event_tree_view.set_rules_hint(True)
 
         self._add_column(self.event_tree_view, "No.", 0, visible=False)
-        self._add_column(self.event_tree_view, "Title", 1)
+        self._add_column(self.event_tree_view, "Title", 1, expand=True)
         self._add_column(self.event_tree_view, "Repo", 2)
         self._add_column(self.event_tree_view, "Owner", 3)
         self._add_column(self.event_tree_view, "State", 4)
         self._add_column(self.event_tree_view, "Assignee", 5)
+        self._add_column(self.event_tree_view, "Created", 6)
 
         # configure comments list view
         self.comment_list_view_model = gtk.ListStore(str, str, str)
@@ -103,6 +104,7 @@ class MainView(GladeComponent):
 
     def update(self, pull_requests):
         self.tree_view_model.clear()
+        pull_requests.sort(key=lambda pull: pull.head.repo.name.lower, reverse=True)
         for pull_request in pull_requests:
             assignee = ""
             if pull_request.assignee:
@@ -112,9 +114,11 @@ class MainView(GladeComponent):
                                          pull_request.head.repo.name,
                                          pull_request.user.login,
                                          pull_request.state,
-                                         assignee])
+                                         assignee,
+                                         pull_request.created_at])
 
-    def _add_column(self, treeview, title, idx, visible=True, markup=False):
+    def _add_column(self, treeview, title, idx, visible=True, markup=False,
+                    expand=False):
         column = gtk.TreeViewColumn(title)
         treeview.append_column(column)
         cell = gtk.CellRendererText()
@@ -126,6 +130,7 @@ class MainView(GladeComponent):
             column.set_attributes(cell, markup=idx)
         column.add_attribute(cell, "text", idx)
         column.set_visible(visible)
+        column.set_expand(expand)
 
 
 
