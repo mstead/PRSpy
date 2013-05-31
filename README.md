@@ -1,9 +1,9 @@
              ____________________  ________________________.___.
              \______   \______   \/   _____/\______   \__  |   |
-             |     ___/|       _/\_____  \  |     ___//   |   |
-             |    |    |    |   \/        \ |    |    \____   |
-             |____|    |____|_  /_______  / |____|    / ______|
-                              \/        \/            \/
+              |     ___/|       _/\_____  \  |     ___//   |   |
+              |    |    |    |   \/        \ |    |    \____   |
+              |____|    |____|_  /_______  / |____|    / ______|
+                               \/        \/            \/
 
 PRSpy is a GNOME application that allows you to monitor GitHub pull requests
 across multiple repositories.
@@ -17,27 +17,27 @@ but when I get around to it I might put some more work into it as I find
 it useful for monitoring the pull requests for the projects I work on at
 work.
 
++++ Install Dependencies +++
+sudo easy_install PyGithub
 
-+++ Running/Setup +++
-
++++ Install/Run +++
 sudo ./setup.py install
 prspy
 
++++ Authorization +++
+PRSpy requires an OAuth token to communicate with github on your behalf. An
+OAuth token can be created via the Option dialog's Authorization tab. Enter
+your github credentials and click the create button.
 
-PRSpy has a built-in configuration module that will be launched when PRSpy is
-started. You will need to enter your github usename and password to create
-an Oauth token so that PRSpy can access the API on your behalf.
++++ Adding Repositories +++
+You can add repositories to track via the Option dialog's Repositories tab.
+Here you can add a single repository at a time or all of the repositories
+within an organization.
 
-Once created, it can be viewed via your github Settings --> Applications page.
+NOTE: Repositories should be entered in the following format:
+[owner]/[repo_name]
 
-Currently, PRSpy can only view the pull requests across multiple repositories
-within a single organization. You will be asked to enter an organization ID
-during the configuration process.
-
-Alternatively, you can manually configure PRSpy by creating a configuration file
-in ~/.prspy/prspy.conf (see the sample config file in the checkout dir). This is
-useful if you already have an Oauth token created.
-
+For example: mstead/prspy
 
 +++ Dependancies +++
 Listing required dependencies here for now until I get around to packaging.
