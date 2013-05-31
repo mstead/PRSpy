@@ -85,7 +85,8 @@ class MainView(GladeComponent):
         self.comment_list_view_model = gtk.ListStore(str, str, str)
         self.comments_tab_list_view.set_model(self.comment_list_view_model)
         self._add_column(self.comments_tab_list_view, "Author", 0)
-        self._add_column(self.comments_tab_list_view, "Comment", 1, markup=True)
+        self._add_column(self.comments_tab_list_view, "Comment", 1, markup=True,
+                         expand=True)
         self._add_column(self.comments_tab_list_view, "Date", 2)
         self.comments_tab_list_view.get_selection().set_mode(gtk.SELECTION_NONE)
         self.comments_tab_list_view.set_rules_hint(True)
