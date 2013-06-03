@@ -8,7 +8,7 @@ from github.CommitComment import CommitComment
 from prspy.gui.component import GladeComponent
 from prspy import utils
 from prspy.github_util import GithubConnect
-from prspy.gtkgui.controllers import OptionsDialogController
+from prspy.gui.options import OptionsDialogController
 import pango
 from images import LOADING_IMAGE
 from threading import Thread
