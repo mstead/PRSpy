@@ -104,30 +104,36 @@ class RepositoryOptionsTab(OptionsDialogTab, gobject.GObject):
 
 class AuthOptionsTab(OptionsDialogTab, gobject.GObject):
     __gsignals__ = {
-        'on-register': (gobject.SIGNAL_RUN_LAST,
+        'on-create-auth-token': (gobject.SIGNAL_RUN_LAST,
                               gobject.TYPE_NONE, ()),
         'on-delete-auth-token': (gobject.SIGNAL_RUN_LAST,
+                              gobject.TYPE_NONE, ()),
+        'on-refresh-auth-token': (gobject.SIGNAL_RUN_LAST,
                               gobject.TYPE_NONE, ()),
     }
 
     def __init__(self):
         widgets = ["main_content", "usernameField", "passwordField",
-                   "messageLabel", "deleteButton", "registerButton"]
+                   "messageLabel", "deleteButton", "registerButton",
+                   "refreshButton"]
         OptionsDialogTab.__init__(self, "auth_tab.glade", widgets)
         gobject.GObject.__init__(self)
 
         self.registerButton.connect("clicked", self._on_button_click)
         self.deleteButton.connect("clicked", self._on_button_click)
+        self.refreshButton.connect("clicked", self._on_button_click)
 
     def update(self, auth_token):
         if auth_token:
             self.messageLabel.set_text("PRSpy is already registered.")
             self.deleteButton.show()
+            self.refreshButton.show()
             self.registerButton.hide()
         else:
             self.messageLabel.set_text("PRSpy requires an OAuth token to authenticate with github.\n"
                                        "Please enter your github username and password to create one.")
             self.deleteButton.hide()
+            self.refreshButton.hide()
             self.registerButton.show()
 
     def _on_button_click(self, button):
@@ -135,7 +141,9 @@ class AuthOptionsTab(OptionsDialogTab, gobject.GObject):
             return
 
         if button == self.registerButton:
-            self.emit("on-register")
+            self.emit("on-create-auth-token")
+        elif button == self.refreshButton:
+            self.emit("on-refresh-auth-token")
         else:
             self.emit("on-delete-auth-token")
 
@@ -163,7 +171,8 @@ class OptionsDialogController(object):
         # Auth Configuration Tab
         self.auth_tab = AuthOptionsTab()
         self.auth_tab.connect("on-delete-auth-token", self._on_delete_auth_token)
-        self.auth_tab.connect("on-register", self._on_register)
+        self.auth_tab.connect("on-create-auth-token", self._on_create_auth_token)
+        self.auth_tab.connect("on-refresh-auth-token", self._on_refresh_auth_token)
         self.view.add_tab("Authorization", self.auth_tab)
 
     def show_view(self):
@@ -195,9 +204,14 @@ class OptionsDialogController(object):
         self.config.save()
         self.repos_tab.set_values(sorted(all_repos))
 
-    def _on_register(self, tab):
+    def _on_create_auth_token(self, tab):
         con = GithubAuthTokenConnector(self.auth_tab.usernameField.get_text(), self.auth_tab.passwordField.get_text())
-        token = con.create_token()
+        existing_token = con.get_token()
+        if existing_token:
+            # Use the existing token if it is found.
+            token = existing_token
+        else:
+            token = con.create_token()
         self.config.set_property("github", "auth_token", token)
         self.config.save()
         self.auth_tab.update(self.config.github_auth_token)
@@ -209,3 +223,5 @@ class OptionsDialogController(object):
             self.config.save()
         self.auth_tab.update(self.config.github_auth_token)
 
+    def _on_refresh_auth_token(self, tab):
+        self._on_create_auth_token(tab)

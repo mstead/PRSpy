@@ -88,17 +88,30 @@ class GithubAuthTokenConnector(object):
     def __init__(self, username, password):
         self.gh = Github(username, password)
 
-    def delete_token(self):
+    def _get_auth(self):
         user = self.gh.get_user()
         auths = list(user.get_authorizations())
         for auth in auths:
             if auth.note == self.__DEFAULT_NOTE:
-                try:
-                    auth.delete()
-                    return True
-                except GithubException:
-                    return False
-        return False
+                return auth
+        return None
+
+    def get_token(self):
+        auth = self._get_auth()
+        if auth:
+            return auth.token
+        return None
+
+    def delete_token(self):
+        auth = self._get_auth()
+        if not auth:
+            return False
+
+        try:
+            auth.delete()
+            return True
+        except GithubException:
+            return False
 
     def create_token(self):
         user = self.gh.get_user()
