@@ -219,6 +219,14 @@ class MainView(GladeComponent):
     def on_config_update(self, config):
         self.refresh_button.set_sensitive(len(config.github_auth_token) != 0)
 
+    def show_error_dialog(self, err):
+        dialog = gtk.MessageDialog(self.window,
+            gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
+            gtk.BUTTONS_CLOSE, "An error has occurred.\n\n%s" % err.message)
+        dialog.run()
+        dialog.destroy()
+
+
 class MainViewController(object):
 
     def __init__(self, config):
@@ -343,6 +351,7 @@ class AsyncMainWindowUpdate(Thread):
         self.pull_request = pull_request
 
     def run(self):
+        try:
             # Show loading icon
             gtk.threads_enter()
             self.main_window.show_loading(True)
@@ -378,3 +387,8 @@ class AsyncMainWindowUpdate(Thread):
             gtk.threads_enter()
             self.main_window.show_loading(False)
             gtk.threads_leave()
+        except Exception, e:
+            gtk.threads_enter()
+            self.main_window.show_error_dialog(e)
+            gtk.threads_leave()
+
