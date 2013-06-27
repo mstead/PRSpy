@@ -8,10 +8,6 @@
 PRSpy is a GNOME application that allows you to monitor GitHub pull requests
 across multiple repositories.
 
-This project started out when I decided to play with the github API one night.
-After messing around with parsing JSON from responses and getting familiar
-with the GH API a little more, I adapted PyGithub.
-
 To be honest, this project is currently in rough shape (no tests)
 but when I get around to it I might put some more work into it as I find
 it useful for monitoring the pull requests for the projects I work on at
